@@ -1,252 +1,282 @@
-**ast_nodes.py (Abstract Syntax Tree Definitions)**
+# SQL Engine Architecture & CRUD Documentation
 
-This file defines the Data Transfer Objects (DTOs) using Python's @dataclass to represent a SQL Abstract Syntax Tree (AST), along with tree traversal utilities.
+This document provides a comprehensive structural and functional overview of the SQL parser, AST representations, lexical scanner, semantic resolver, and CRUD analysis engine.
 
-Data Classes (AST Nodes)
-Statements
-Script: Root container for an entire SQL script, holding a list of parsed statements and any parsing errors.
+## 1. Abstract Syntax Tree — `ast_nodes.py`
 
-Select: Represents a SELECT statement, including clauses: distinct, columns, sources (tables/subqueries), joins, where, group_by, order_by, and line number.
+The `ast_nodes.py` module defines the **Data Transfer Objects (DTOs)** using Python `@dataclass` decorators to represent the SQL Abstract Syntax Tree (AST), alongside utility functions for tree traversal and formatting.
 
-Insert: Represents an INSERT statement, specifying the target table, targeted columns, inserted values (rows of expressions), or a source query (INSERT INTO ... SELECT).
+### Data Classes (AST Nodes)
 
-Update: Represents an UPDATE statement, containing target table, column assignments, and where clause.
+#### Statements
 
-Delete: Represents a DELETE statement, containing target table and where clause.
+- **`Script`**: The root container for an entire SQL script, maintaining a list of parsed `statements` and associated `errors`.
 
-Statement Parts
-SelectItem: Wraps a single expression inside a SELECT clause along with an optional alias.
+- **`Select`**: Represents a `SELECT` statement, encapsulating clauses: `distinct`, `columns`, `sources` (tables/subqueries), `joins`, `where`, `group_by`, `order_by`, and `line`.
 
-Star: Marker representing SELECT \*.
+- **`Insert`**: Represents an `INSERT` statement, specifying the target `table`, targeted `columns`, inserted `values` (rows of expressions), or a source `query` (`INSERT INTO ... SELECT`).
 
-TableRef: Represents a direct table reference (e.g., crm.pelanggan) with optional table alias.
+- **`Update`**: Represents an `UPDATE` statement, containing the target `table`, column `assignments`, and optional `where` clause.
 
-DerivedTable: Represents a subquery used as a table source inside a FROM or JOIN clause.
+- **`Delete`**: Represents a `DELETE` statement, containing the target `table` and optional `where` clause.
 
-Join: Represents a SQL JOIN clause with its kind ("INNER", "LEFT"), target source, and condition.
+#### Statement Components
 
-Assignment: Pairs a target ColumnRef with its assigned value expression in an UPDATE statement.
+- **`SelectItem`**: Wraps a single expression inside a `SELECT` clause along with an optional `alias`.
 
-OrderItem: Represents an expression in an ORDER BY clause with sort direction ("ASC" or "DESC").
+- **`Star`**: Marker representing all columns (`SELECT *`).
 
-Expressions & Predicates
-BinaryOp: Represents binary operations (+, -, =, AND, OR, LIKE, etc.) between left and right expressions.
+- **`TableRef`**: Direct table reference (e.g., `crm.pelanggan`) with an optional table `alias`.
 
-UnaryOp: Represents unary operations (NOT, -) applied to an operand.
+- **`DerivedTable`**: Represents a subquery used as a table source inside a `FROM` or `JOIN` clause.
 
-InExpr: Represents IN (...) conditions—either containing explicit static values or a subquery (query).
+- **`Join`**: Represents a SQL `JOIN` clause with its `kind` (`"INNER"`, `"LEFT"`), target `source`, and `condition`.
 
-Between: Represents expr BETWEEN low AND high.
+- **`Assignment`**: Pairs a target `ColumnRef` with its assigned value expression in an `UPDATE` statement.
 
-IsNull: Represents IS NULL or IS NOT NULL checks.
+- **`OrderItem`**: Represents an expression in an `ORDER BY` clause with a sort direction (`"ASC"` or `"DESC"`).
 
-Exists: Represents an EXISTS (SELECT ...) predicate.
+#### Expressions & Predicates
 
-Subquery: Represents a scalar subquery embedded within an expression.
+- **`BinaryOp`**: Represents binary operations (`+`, `-`, `=`, `AND`, `OR`, `LIKE`, etc.) between `left` and `right` expressions.
 
-FunctionCall: Represents standard SQL functions (e.g., COUNT(\*), SUM(val)) with function name and args.
+- **`UnaryOp`**: Represents unary operations (`NOT`, `-`) applied to an `operand`.
 
-ColumnRef: Represents a column reference (qualifier.name or just name). Includes a resolved attribute populated during semantic analysis to store the fully qualified table name.
+- **`InExpr`**: Represents `IN (...)` conditions—containing either explicit static `values` or a subquery (`query`).
 
-Literal: Represents constant values (numbers, strings, NULL).
+- **`Between`**: Represents `expr BETWEEN low AND high`.
 
-Param: Represents parameter placeholders (?, :name) for prepared statements.
+- **`IsNull`**: Represents `IS NULL` or `IS NOT NULL` evaluation checks.
 
-Utility Functions
-iter_nodes(node)
-Traverses the AST starting from node in pre-order depth-first search (DFS).
+- **`Exists`**: Represents an `EXISTS (SELECT ...)` predicate.
 
-Iterates through Python lists recursively.
+- **`Subquery`**: Represents a scalar subquery embedded within an expression.
 
-Ignores non-dataclass nodes.
+- **`FunctionCall`**: Represents standard SQL function invocations (e.g., `COUNT(*)`, `SUM(val)`) with function `name` and `args`.
 
-Yields the current node, then iterates over all dataclass fields (skipping metadata fields like resolved).
+- **`ColumnRef`**: Represents a column reference (`qualifier.name` or `name`). Includes a `resolved` attribute populated during semantic analysis to store the fully qualified table name.
 
-pretty(node, indent=0) -> str
-Formats the AST into a human-readable, indented string tree representation used for debugging or predicting tree structures.
+- **`Literal`**: Represents literal values (numbers, strings, `NULL`).
 
-**analyzer.py (SQL Statement Analyzer & CRUD Mapper)**
+- **`Param`**: Represents parameter placeholders (`?`, `:name`) for prepared queries.
 
-this file analyzes SQL AST statements to map operations to target tables/columns (CRUD operations: Create, Read, Update, Delete).
+### Utility Functions
 
-Primary API Functions
-analyze_statement(stmt) -> dict[str, set[str]]
-Performs high-level table-level CRUD analysis on a single SQL statement.
+#### `iter_nodes(node)`
 
-Select: Collects all referenced tables and marks them with Read ("R").
+Traverses the AST starting from `node` using pre-order **Depth-First Search (DFS)**:
 
-Insert: Marks the target table with Create ("C"), and marks any tables referenced in values or subqueries with Read ("R").
+- Iterates through Python `list` items recursively.
 
-Update: Marks the target table with Update ("U"), and marks expression targets/predicates with Update ("U").
+- Bypasses non-dataclass instances.
 
-Delete: Marks the target table with Delete ("D"), and marks tables in where conditions with Read ("R").
+- Yields the current node, then traverses all dataclass fields (excluding metadata fields like `resolved`).
 
-Returns: A dictionary mapping table names to set of CRUD operations, e.g., {"crm.pelanggan": {"R"}, "crm.pesanan": {"C"}}.
+#### `pretty(node, indent=0) -> str`
 
-column_usage(stmt) -> set[tuple[str, str, str]]
-Performs fine-grained column-level analysis. Requires prior resolution (where ColumnRef.resolved has been populated by a resolver module).
+Formats the AST into a human-readable, indented string tree representation for debugging and visualization.
 
-Update: Maps assigned target columns to Update ("U"), and scans value/where expressions for Read ("R").
+## 2. SQL CRUD Analyzer — `analyzer.py`
 
-Insert: Maps target columns to Create ("C"), and scans source values/queries for Read ("R").
+The `analyzer.py` module evaluates SQL AST nodes to map operations to target tables and columns using standard **CRUD** mapping (**C**reate, **R**ead, **U**pdate, **D**elete).
 
-Other Statements (Select, Delete): Scans all nodes via iter_nodes() for column read operations.
+### Primary API Functions
 
-Returns: A set of tuples formatted as (table_name, column_name, operation_type).
+#### `analyze_statement(stmt) -> dict[str, set[str]]`
 
-Internal Helper Functions
-\_collect_select(sel: ast.Select, usage, op: str) -> None
-Traverses a Select node (and subqueries inside FROM, JOIN, WHERE, GROUP BY, ORDER BY, or target list) to flag table references with the operation op.
+Performs high-level, table-level CRUD analysis on a single SQL statement.
 
-\_collect(expr, usage, op: str) -> None
-Traverses complex expressions recursively to discover nested subqueries (e.g., EXISTS, scalar subqueries, IN (SELECT ...)) and extract table usage from them using \_collect_select.
+| Statement    | Target Table Action                     | Referenced Table Action                                  |
+| ------------ | --------------------------------------- | -------------------------------------------------------- |
+| **`Select`** | N/A                                     | Marks all source tables with Read (`"R"`)                |
+| **`Insert`** | Target table marked with Create (`"C"`) | Value/subquery tables marked with Read (`"R"`)           |
+| **`Update`** | Target table marked with Update (`"U"`) | Target expressions/predicates marked with Update (`"U"`) |
+| **`Delete`** | Target table marked with Delete (`"D"`) | `WHERE` condition tables marked with Read (`"R"`)        |
 
-**lexer.py (Lexical Analysis & Tokenization)**
+- **Returns**: Dictionary mapping table names to sets of operations, e.g., `{"crm.pelanggan": {"R"}, "crm.pesanan": {"C"}}`.
 
-This file converts raw SQL text into a sequential stream of strongly typed tokens.
+#### `column_usage(stmt) -> set[tuple[str, str, str]]`
 
-Data Structures & Definitions
-TokenType (Enum): Defines all supported token categories, including KEYWORD, IDENT (identifiers), NUMBER, STRING, PARAM (bind variables like ? or :name), OP (operators), STAR (\*), delimiters (LPAREN, RPAREN, COMMA, DOT, SEMICOLON), and EOF.
+Performs fine-grained column-level analysis.
 
-KEYWORDS (frozenset): List of reserved SQL keywords in uppercase (e.g., SELECT, FROM, WHERE, JOIN, UPDATE, INSERT, DELETE).
+> **Prerequisite:** Requires semantic resolution to have been executed (`ColumnRef.resolved` must be populated).
 
-\_SINGLE (dict): Direct lookup table mapping single-character punctuation marks ((, ), ,, ., ;, \*) to their respective TokenType.
+- **`Update`**: Maps assigned target columns to Update (`"U"`), and scans value/where expressions for Read (`"R"`).
 
-Token (@dataclass): Immutable container storing token metadata: type, value (raw substring), line number, and col number.
+- **`Insert`**: Maps target columns to Create (`"C"`), and scans source values/queries for Read (`"R"`).
 
-LexError (Exception): Custom error raised when encountering invalid characters or unclosed literals, capturing the error line and column.
+- **`Select` / `Delete`**: Scans all nodes via `iter_nodes()` for column Read (`"R"`) operations.
 
-Lexer Class & State Machine
-**init**(source): Initializes the scanning pointer pos = 0, trackable position line = 1 and col = 1, and an empty tokens list.
+- **Returns**: A set of tuples formatted as `(table_name, column_name, operation_type)`.
 
-tokenize() -> list[Token]: Main loop that calls \_scan_token() until the input end is reached, then appends a TokenType.EOF token.
+### Internal Helper Functions
 
-Position & Scanning Helpers:
+- **`_collect_select(sel: ast.Select, usage, op: str) -> None`**
+  Traverses a `Select` node (and nested subqueries within `FROM`, `JOIN`, `WHERE`, `GROUP BY`, `ORDER BY`, or target lists) to tag table references with operation `op`.
 
-\_at_end(): Checks if pointer reaches source length.
+- **`_collect(expr, usage, op: str) -> None`**
+  Recursively traverses complex expressions to discover subqueries (`EXISTS`, scalar subqueries, `IN (SELECT ...)`) and extract table operations via `_collect_select`.
 
-\_peek(offset): Looks ahead at the character at pos + offset without moving the pointer.
+## 3. Lexical Analysis — `lexer.py`
 
-\_advance(): Consumes current character and updates line/column counters.
+The `lexer.py` module converts raw SQL source text into a sequential stream of strongly-typed tokens.
 
-\_match(expected): Consumes character if it matches expected input.
+### Data Structures & Definitions
 
-_add(type_, value, line, col): Appends a new Token object to tokens.
+- **`TokenType` (`Enum`)**: Defines token categories:
+  `KEYWORD`, `IDENT`, `NUMBER`, `STRING`, `PARAM`, `OP`, `STAR`, `LPAREN`, `RPAREN`, `COMMA`, `DOT`, `SEMICOLON`, `EOF`.
 
-Token Scanning Logic
-\_scan_token(): Core scanner function that reads the next character and routes to specific handlers:
+- **`KEYWORDS` (`frozenset`)**: Immutably stores standard reserved SQL keywords in uppercase (e.g., `SELECT`, `FROM`, `WHERE`, `JOIN`, `UPDATE`, `INSERT`, `DELETE`).
 
-Whitespace: Ignored ( \t\r\n).
+- **`_SINGLE` (`dict`)**: Constant map translating single-character punctuation (`(`, `)`, `,`, `.`, `;`, `*`) directly to `TokenType`.
 
-Comments: Skips single-line -- comments until \n. Raises LexError for unsupported /\* block comments.
+- **`Token` (`@dataclass`)**: Immutable container storing token details: `type`, `value`, `line`, and `col`.
 
-Operators: Handles single-character (+, -, /, =), multi-character operators (<=, >=, !=), and raises errors for invalid standalone !.
+- **`LexError` (`Exception`)**: Custom exception raised for unexpected characters or unclosed literal strings.
 
-Parameters: Recognizes standard positional parameters (?) and named parameters (:name).
+### Lexer State Machine
 
-\_string(line, col): Scans single-quoted string literals ('text'). Raises LexError if string remains unclosed at EOF.
+- **`__init__(source)`**: Initializes tracking pointers (`pos = 0`, `line = 1`, `col = 1`) and an empty `tokens` buffer.
 
-\_number(line, col): Scans integer and floating-point numeric literals (e.g., 42, 3.14).
+- **`tokenize() -> list[Token]`**: Executes the primary scan loop until input termination, appending a final `TokenType.EOF` token.
 
-\_word(line, col): Scans alphanumeric identifiers and underscores. Checks against KEYWORDS: matches convert to TokenType.KEYWORD, while non-matches default to TokenType.IDENT.
+#### Position & Scanning Helpers
 
-tokenize(source): High-level wrapper function instantiating Lexer and returning the token list.
+- `_at_end()`: Checks if the scanner pointer has reached input end.
 
-**parser.py (Recursive Descent AST Parser)**
+- `_peek(offset)`: Inspects ahead by `offset` characters without advancing position.
 
-This file parses the flat token list generated by the lexer into an Abstract Syntax Tree (AST) defined by ast_nodes.py.
+- `_advance()`: Consumes the current character and updates line/column coordinates.
 
-Error Handling & Helper Methods
-ParseError (Exception): Custom exception raised when expected tokens are missing or syntactically invalid.
+- `_match(expected)`: Consumes the next character conditionally if it matches `expected`.
 
-Parser State & Lookahead:
+- `_add(type_, value, line, col)`: Instantiates and appends a `Token` to the internal buffer.
 
-\_peek(offset) / \_advance(): Inspects or consumes tokens.
+### Scanning Handlers
 
-_check(type_, value) / \_check_kw(\*words): Verifies if current token matches target type/value without advancing.
+```
+Input Character
+├── Whitespace         ──> Ignore (\t, \r, \n)
+├── Single-line '--'   ──> Skip until newline
+├── Single char        ──> Map directly via _SINGLE
+├── Operators          ──> Evaluate single/multi-char (+, -, <=, >=, !=)
+├── String (')         ──> _string() handler
+├── Numbers (0-9)      ──> _number() handler
+└── Alphanumeric       ──> _word() handler ──> KEYWORD or IDENT
 
-_match(type_, value) / \_match_kw(\*words): Consumes and returns true if current token matches expectations.
+```
 
-\_expect(...) / \_expect_kw(...) / \_expect_ident(...): Consumes expected token or raises ParseError.
+- **`_scan_token()`**: Main character dispatcher for the scanner.
 
-parse_script() -> ast.Script: Parses multiple semicolon-separated statements. Uses \_synchronize() (panic-mode error recovery) to skip tokens after an error until reaching a semicolon.
+- **`_string(line, col)`**: Consumes single-quoted literals. Raises `LexError` if unclosed.
 
-Statement Parsers
-\_statement(): Main routing node for statements (SELECT, INSERT, UPDATE, DELETE).
+- **`_number(line, col)`**: Consumes integer and decimal floating-point literals.
 
-\_select(): Parses complete SELECT statements including DISTINCT, select expressions (\_select_list), FROM sources (\_table_ref), optional JOIN clauses (\_join), WHERE predicates, GROUP BY lists, and ORDER BY items (\_order_list).
+- **`_word(line, col)`**: Consumes alphanumeric words; checks against `KEYWORDS` to emit `KEYWORD` or `IDENT`.
 
-\_select_item(): Handles individual return columns and optional AS column aliases.
+- **`tokenize(source)`**: High-level wrapper function instantiating `Lexer` and processing token sequence.
 
-\_table_ref() / \_table_name() / \_alias(): Parses standard table references (schema.table), explicit/implicit aliases, and parenthesized derived tables (subqueries).
+## 4. Recursive Descent Parser — `parser.py`
 
-\_insert(): Parses INSERT INTO table (cols) VALUES (...). (Contains a TODO hook for INSERT INTO ... SELECT).
+The `parser.py` module converts flat token streams into structured AST instances matching `ast_nodes.py`.
 
-\_update() / \_assignment(): Parses UPDATE table SET column = expr WHERE ....
+### Error Handling & Utilities
 
-\_delete(): Parses DELETE FROM table WHERE ....
+- **`ParseError` (`Exception`)**: Raised when expected tokens are absent or syntactically invalid.
 
-Expression Parsing (Operator Precedence Hierarchy)
-Expressions are parsed from lowest precedence to highest precedence:
+- **Parser State Controls**:
+  - `_peek()` / `_advance()`: Inspects or consumes current tokens.
 
-\_logical(): Handles binary OR and AND operations (left-associative).
+  - `_check()` / `_check_kw()`: Validates token type/keyword presence without consuming.
 
-\_not(): Handles unary NOT prefix operations.
+  - `_match()` / `_match_kw()`: Consumes token if expected matches.
 
-\_comparison(): Handles relational operators (=, <>, !=, <, <=, >, >=), IN, LIKE, BETWEEN, and IS [NOT] NULL.
+  - `_expect()` / `_expect_kw()` / `_expect_ident()`: Enforces token match or raises `ParseError`.
 
-\_in_rest(): Differentiates between static IN (val1, val2) lists and subquery IN (SELECT ...).
+- **`parse_script() -> ast.Script`**: Parses semicolon-separated statements using panic-mode recovery (`_synchronize()`).
 
-\_additive(): Handles binary + and -.
+### Statement Parsers
 
-\_multiplicative(): Handles binary \* and /.
+```
+                ┌──> _select() ──> ast.Select
+                ├──> _insert() ──> ast.Insert
+_statement() ───┼──> _update() ──> ast.Update
+                └──> _delete() ──> ast.Delete
 
-\_unary(): Handles unary numerical negation (-).
+```
 
-\_primary(): Parses atomic values: literals (numbers, strings, NULL), parameters, subqueries (EXISTS, scalar (SELECT ...)), grouped sub-expressions (expr), function calls, or column references.
+- **`_statement()`**: Primary route dispatcher for top-level SQL statements.
 
-\_function_call() / \_column_ref(): Parses function calls (e.g., COUNT(\*), SUM(val)) and column references (table.column or column).
+- **`_select()`**: Parses full `SELECT` statements (`DISTINCT`, `_select_list`, `FROM`, `_join`, `WHERE`, `GROUP BY`, `_order_list`).
 
-parse_sql(source): Convenience function chaining tokenize() and Parser.parse_script().
+- **`_select_item()`**: Handles individual projection expressions and `AS` aliases.
 
-**resolver.py (Symbol Resolution & Scope Analysis Pass)**
+- **`_table_ref()` / `_table_name()` / `_alias()`**: Parses schema-qualified names (`schema.table`), aliases, and nested derived tables.
 
-This file executes a post-parsing semantic pass over the AST. It builds scope trees to map table qualifiers (e.g., p in p.name) to actual underlying database tables and populates the ColumnRef.resolved field.
+- **`_insert()`**: Parses `INSERT INTO table (columns) VALUES (...)`.
 
-Scope Management Structures
-Diagnostic (@dataclass): Tracks semantic warnings and errors along with line numbers.
+- **`_update()` / `_assignment()`**: Parses `UPDATE table SET column = expr WHERE ...`.
 
-ScopeEntry (@dataclass): Stores an alias or table name in scope and maps it to its target table string (or <subquery alias>).
+- **`_delete()`**: Parses `DELETE FROM table WHERE ...`.
 
-Scope: Implements a tree node for nested lexical environments with a pointer to its parent scope.
+### Expression Parsing (Precedence Hierarchy)
 
-Resolver Scope Operations:
+Expressions are parsed top-down from lowest operator precedence to highest:
 
-\_push() / \_pop(): Manages entering and exiting nested scope blocks.
+```
+Low Precedence   │  1. _logical()        ──> OR, AND
+                 │  2. _not()            ──> NOT
+                 │  3. _comparison()     ──> =, <>, !=, <, <=, >, >=, IN, LIKE, BETWEEN, IS NULL
+                 │  4. _additive()       ──> +, -
+                 │  5. _multiplicative() ──> *, /
+                 │  6. _unary()          ──> - (numerical negation)
+High Precedence  ▼  7. _primary()        ──> Literals, Params, Subqueries, ColumnRef, Functions
 
-\_declare(name, table, line): Registers table/alias names in the active scope. Reports duplicate alias definitions as errors.
+```
 
-\_declare_source(source): Registers TableRef or DerivedTable nodes into scope. Issues warnings for subqueries in FROM missing an alias.
+- **`_function_call()` / `_column_ref()`**: Parses function signatures (`COUNT(*)`, `SUM(...)`) and column identifiers (`table.column` or `column`).
 
-\_lookup(name): Traverses the scope hierarchy from child to parent to resolve identifier qualifiers.
+- **`parse_sql(source)`**: High-level routine chaining `tokenize()` and `parse_script()`.
 
-Semantic Pass Traversal
-resolve_script() / resolve_statement(): Dispatches AST statements (Select, Insert, Update, Delete) through scope resolution routines.
+## 5. Semantic Resolver — `resolver.py`
 
-\_select():
+The `resolver.py` module performs a post-parsing semantic validation pass over the AST to build scoped symbol tables and bind qualified column names to concrete database entities.
 
-Resolves subqueries inside FROM/JOIN first (preventing subqueries from referencing peer FROM sources).
+### Scope Management & Structures
 
-Pushes a new scope level and declares source tables.
+- **`Diagnostic` (`@dataclass`)**: Tracks warning and error diagnostics alongside source line numbers.
 
-Resolves column references across SELECT targets, JOIN conditions, WHERE, GROUP BY, and ORDER BY.
+- **`ScopeEntry` (`@dataclass`)**: Maps identifier aliases or table names within a scope to fully-qualified target tables.
 
-\_insert() / \_update() / \_delete(): Pushes necessary scopes, registers target tables, and traverses assignment values and WHERE predicates.
+- **`Scope`**: Hierarchical scope tree node referencing its `parent` scope.
 
-\_expr(): Recursively traverses AST expression nodes (BinaryOp, InExpr, Between, FunctionCall, etc.) down to leaf ColumnRef nodes.
+- **`Resolver` Engine Methods**:
+  - `_push()` / `_pop()`: Manages entry and exit for lexical scope blocks.
 
-\_column(col): Resolves ColumnRef nodes:
+  - `_declare(name, table, line)`: Binds identifiers in active scope; catches duplicate alias declarations.
 
-If a qualifier exists (e.g., p.name), looks up p in scope chain and assigns col.resolved = target_table.
+  - `_declare_source(source)`: Binds `TableRef` or `DerivedTable` nodes into scope; warns on un-aliased subqueries in `FROM`.
 
-(Contains a TODO for handling unqualified column references according to spec rules).
+  - `_lookup(name)`: Traverses up the scope tree chain to locate resolved qualifiers.
+
+### Semantic Pass Execution
+
+```
+resolve_script()
+       │
+       ▼
+resolve_statement()
+ ├── _select()  ──> Scope Push ──> Register Sources ──> Resolve Columns/Exprs ──> Scope Pop
+ ├── _insert()  ──> Resolve Values & Subqueries
+ ├── _update()  ──> Scope Push ──> Register Target ──> Resolve Assignments ──> Scope Pop
+ └── _delete()  ──> Scope Push ──> Register Target ──> Resolve Predicates   ──> Scope Pop
+
+```
+
+- **`_select()`**: Evaluates subqueries in `FROM`/`JOIN` first, creates a local scope, registers source table aliases, and resolves expressions across `SELECT`, `JOIN`, `WHERE`, `GROUP BY`, and `ORDER BY` clauses.
+
+- **`_insert()` / `_update()` / `_delete()`**: Manages appropriate scope frames for target tables and evaluates child expressions.
+
+- **`_expr()`**: Recursively traverses expression structures down to leaf nodes.
+
+- **`_column(col)`**: Resolves `ColumnRef` instances. If a qualifier exists, looks up table mapping and assigns `col.resolved = target_table`.
