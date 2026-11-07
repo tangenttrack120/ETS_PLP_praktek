@@ -90,8 +90,10 @@ class Parser:
     def _synchronize(self) -> None:
         # Panic mode (Crafting Interpreters bab 6): buang token sampai
         # titik aman, lalu lanjutkan parsing.
+        # Buang token sampai DAN TERMASUK ';' berikutnya (SPEK 6, Bab 6.3.3)
         while not self._at_end():
-            self._advance()
+            if self._advance().type == T.SEMICOLON:
+                return
 
     def _statement(self):
         if self._check_kw("SELECT"):
@@ -176,6 +178,7 @@ class Parser:
             kind = "INNER"
         elif self._match_kw("LEFT"):
             kind = "LEFT"
+            self._match_kw("OUTER")      # grammar: "LEFT" [ "OUTER" ]
         self._expect_kw("JOIN")
         source = self._table_ref()
         self._expect_kw("ON")
@@ -253,14 +256,21 @@ class Parser:
 
     # ---- ekspresi (dari presedensi terendah ke tertinggi) ---------------
     def _expr(self):
-        return self._logical()
+        return self._or()
 
-    def _logical(self):
-        # OR dan AND: operator logika biner, asosiatif kiri.
+    # Satu tingkat presedensi = satu fungsi (Bab 6.2). OR lebih lemah dari AND (SPEK 3.1).
+    def _or(self):
+        # or_expr = and_expr { "OR" and_expr }
+        left = self._and()
+        while self._match_kw("OR"):
+            left = ast.BinaryOp(left, "OR", self._and())
+        return left
+
+    def _and(self):
+        # and_expr = not_expr { "AND" not_expr }
         left = self._not()
-        while self._check_kw("AND", "OR"):
-            op = self._advance().value
-            left = ast.BinaryOp(left, op, self._not())
+        while self._match_kw("AND"):
+            left = ast.BinaryOp(left, "AND", self._not())
         return left
 
     def _not(self):
