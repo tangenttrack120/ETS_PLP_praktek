@@ -18,9 +18,10 @@ def analyze_statement(stmt) -> dict[str, set[str]]:
             _collect_select(stmt.query, usage, "R")
     elif isinstance(stmt, ast.Update):
         usage[stmt.table.name].add("U")
+        # Tabel yang dibaca lewat subquery SELALU R (SPEK 5). Hanya target yang U.
         for assignment in stmt.assignments:
-            _collect(assignment.value, usage, "U")
-        _collect(stmt.where, usage, "U")
+            _collect(assignment.value, usage, "R")
+        _collect(stmt.where, usage, "R")
     elif isinstance(stmt, ast.Delete):
         usage[stmt.table.name].add("D")
         _collect(stmt.where, usage, "R")
