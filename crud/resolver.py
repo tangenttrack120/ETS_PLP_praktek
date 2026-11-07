@@ -137,6 +137,7 @@ class Resolver:
         self._push()
         self._declare_source(dele.table)
         self._expr(dele.where)
+        self._pop()     # setiap _push wajib punya _pop (SPEK 4.5)
 
     # ---- ekspresi -------------------------------------------------------
     def _expr(self, expr) -> None:
