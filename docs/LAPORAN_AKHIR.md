@@ -94,4 +94,13 @@ dan informasi apa yang dibutuhkan untuk mengatasinya.
 
 Siapa mengerjakan apa, dan bagaimana kalian memastikan keduanya memahami seluruh kode.
 
-(ISI SENDIRI)
+- **Richard:** membaca dan mendokumentasikan kode (`CRUD_doc.md`, `testUnit_doc.md`),
+  menyelesaikan T3 (komentar blok), T1 (`INSERT ... SELECT`), versi awal T2, dan mencatat bug
+  `''`, `<>`, `LEFT OUTER JOIN`, serta panic mode di `LAPORAN_BUG.md`.
+- **Afzal:** memperbaiki bug lexer (keyword huruf kecil, `<>`, `''`), parser (panic mode,
+  presedensi `AND`/`OR`, `LEFT OUTER JOIN`), resolver (urutan lookup scope, pop scope `DELETE`),
+  dan analyzer (subquery di `UPDATE`); mengoreksi T2 agar hanya melihat scope terdalam; menulis
+  `test_tambahan.py`, ground truth, kartu desain, dan laporan akhir.
+- **Memastikan keduanya paham:** setiap perubahan lewat pull request yang direview anggota lain,
+  dan sebelum demo kami saling menjelaskan seluruh perbaikan (termasuk bagian yang dikerjakan
+  anggota lain) serta saling memberi pertanyaan prediksi output.
