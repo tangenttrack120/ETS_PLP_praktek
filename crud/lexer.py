@@ -126,8 +126,14 @@ class Lexer:
         if ch in "+-/=":
             self._add(TokenType.OP, ch, line, col)
             return
+        """ Tambahkan dukungan operator perbandingan sesuai SPESIFIKASI.md bagian 2.5"""
         if ch == "<":
-            op = "<=" if self._match("=") else "<"
+            if self._match("="):
+                op = "<="
+            elif self._match(">"):
+                op = "<>"
+            else:
+                op = "<"
             self._add(TokenType.OP, op, line, col)
             return
         if ch == ">":
