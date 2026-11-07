@@ -174,6 +174,11 @@ class Lexer:
                 raise LexError("string tidak ditutup", line, col)
             ch = self._advance()
             if ch == "'":
+                # '' di dalam string = satu karakter kutip (SPEK 2.4)
+                if self._peek() == "'":
+                    self._advance()
+                    chars.append("'")
+                    continue    
                 break
             chars.append(ch)
         self._add(TokenType.STRING, "".join(chars), line, col)
