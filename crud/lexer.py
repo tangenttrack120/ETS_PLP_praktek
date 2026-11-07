@@ -167,9 +167,15 @@ class Lexer:
             if self._at_end():
                 raise LexError("string tidak ditutup", line, col)
             ch = self._advance()
+            """Menambahkan dukungan escape character sesuai SPESIFIKASI.md bagian 2.4"""
             if ch == "'":
-                break
-            chars.append(ch)
+                if self.peek() == "'":
+                    self.advance()
+                    chars.append("'")
+                else:
+                    break
+            else:
+                chars.append(ch)
         self._add(TokenType.STRING, "".join(chars), line, col)
 
     def _number(self, line: int, col: int) -> None:
