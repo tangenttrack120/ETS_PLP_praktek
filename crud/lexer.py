@@ -106,13 +106,11 @@ class Lexer:
             while not self._at_end() and self._peek() != "\n":
                 self._advance()
             return
-        # kode awal
-        """
+
         if ch == "/" and self._peek() == "*":
-            # TODO(T3): dukung komentar blok /* ... */ (SPESIFIKASI.md bagian 2.3).
-            raise LexError("komentar blok belum didukung", line, col)
-        """
-        if ch == "/" and self._peek() == "*":
+            """
+                TODO(T3): dukung komentar blok /* ... */ (SPESIFIKASI.md bagian 2.3).
+            """
             self._advance()  # consume '*'
             while not self._at_end():
                 if self._peek() == "*" and self._peek(1) == "/":
