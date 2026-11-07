@@ -187,8 +187,9 @@ class Lexer:
         while self._peek().isalnum() or self._peek() == "_":
             self._advance()
         text = self.src[start:self.pos]
-        if text in KEYWORDS:
-            self._add(TokenType.KEYWORD, text, line, col)
+        # Keyword tidak peka huruf besar/kecil, dinormalisasi ke huruf besar (SPEK 2.2)
+        if text.upper() in KEYWORDS:
+            self._add(TokenType.KEYWORD, text.upper(), line, col)
         else:
             self._add(TokenType.IDENT, text, line, col)
 
