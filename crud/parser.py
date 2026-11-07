@@ -90,8 +90,10 @@ class Parser:
     def _synchronize(self) -> None:
         # Panic mode (Crafting Interpreters bab 6): buang token sampai
         # titik aman, lalu lanjutkan parsing.
+        # Buang token sampai DAN TERMASUK ';' berikutnya (SPEK 6, Bab 6.3.3)
         while not self._at_end():
-            self._advance()
+            if self._advance().type == T.SEMICOLON:
+                return
 
     def _statement(self):
         if self._check_kw("SELECT"):
