@@ -177,8 +177,27 @@ class Resolver:
             else:
                 col.resolved = _target_of(entry)
             return
-        # TODO(T2): kolom tanpa qualifier (SPESIFIKASI.md bagian 4.3).
-        #   - tepat satu tabel di scope terdalam -> isi col.resolved
-        #   - lebih dari satu tabel              -> warning "ambigu tanpa skema"
-        #   - tidak ada tabel                    -> warning
+        
+        """
+            TODO(T2): kolom tanpa qualifier (SPESIFIKASI.md bagian 4.3).
+            - tepat satu tabel di scope terdalam -> isi col.resolved
+            - lebih dari satu tabel              -> warning "ambigu tanpa skema"
+            - tidak ada tabel                    -> warning
+        """
+        
+        # Unqualified column handling (SPESIFIKASI.md 4.3)
+        available_tables = []
+        scope = self.scope
+        while scope is not None:
+            for entry in scope.entries.values():
+                if entry.table is not None:
+                    available_tables.append(entry.table)
+            scope = scope.parent
+            
+        if len(available_tables) == 1:
+            col.resolved = available_tables[0]
+        elif len(available_tables) > 1:
+            self._warning(f"kolom '{col.name}' ambigu tanpa skema", col.line)
+        else:
+            self._warning(f"kolom '{col.name}' tidak dapat diresolusi", col.line)
         pass
