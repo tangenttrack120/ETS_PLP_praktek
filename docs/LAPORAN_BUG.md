@@ -7,7 +7,7 @@ sendiri dan memakai konsep dari _Crafting Interpreters_ (sebutkan bab). Bagian i
 
 ## Bug 1: (LexError pada test_komentar_block() di test_lexer.py)
 
-**Ditemukan oleh:** (Richard) · **Diperbaiki oleh:** (nama)
+**Ditemukan oleh:** (Richard) · **Diperbaiki oleh:** (Richard)
 
 **Gejala.** Saat menjalankan pytest pada bagian test_lexer.py, test_komentar_block() gagal dan memberikan error message "LexError" saat bertemu "/\*".
 
@@ -17,16 +17,13 @@ sendiri dan memakai konsep dari _Crafting Interpreters_ (sebutkan bab). Bagian i
 
 ```
 
-**Akar masalah.** Mengapa kode lama salah? Konsep apa yang dilanggar?
+**Akar masalah.** Di dalam lexer.py, saat lexer menemukan karakter / yang diikuti oleh \*, kode akan memicu bagian kode (stub) yang secara eksplisit melontarkan pengecualian LexError("komentar blok belum didukung", line, col). test_komentar_blok() mengharuskan lexer untuk melewati seluruh blok komentar tersebut, sembari tetap memperbarui jumlah baris dan kolom secara akurat, termasuk untuk komentar yang mencakup beberapa baris.
 
-**Perbaikan.** File dan fungsi yang diubah, serta alasannya. Sebutkan juga perbaikan
-alternatif yang kalian pertimbangkan dan alasan tidak memilihnya.
+**Perbaikan.** File yang diubah adalah lexer.py pada fungsi \_scan*token() dikarenakan kode belum lengkap (TODO(T3): dukung komentar blok /* ... \_/ (SPESIFIKASI.md bagian 2.3)).
 
-**Test regresi.** Nama test di `tests/test_tambahan.py` yang gagal sebelum perbaikan dan lulus
-sesudahnya.
+**Test regresi.** test_komentar_block() di test_lexer.py.
 
-**Peran AI.** Apakah AI membantu menemukan atau memperbaiki bug ini? Bagaimana kalian
-memverifikasinya?
+**Peran AI.** Bug ditemukan saat menjalankan pytest, peran AI pada bug ini adalah brainstorming dan memahami syntax
 
 ---
 
