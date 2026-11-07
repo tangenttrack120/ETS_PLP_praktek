@@ -191,12 +191,13 @@ class Parser:
             if not self._match(T.COMMA):
                 return items
 
-    # ---- INSERT, UPDATE, DELETE -----------------------------------------
+    # ---- INSERT, UPDATE, DELETE -----------------------------------------    
     def _insert(self) -> ast.Insert:
         start = self._expect_kw("INSERT")
         self._expect_kw("INTO")
         tok = self._peek()
         table = ast.TableRef(self._table_name(), None, line=tok.line)
+    
         columns = []
         if self._check(T.LPAREN) and not self._next_is_select():
             self._advance()
@@ -204,14 +205,22 @@ class Parser:
             while self._match(T.COMMA):
                 columns.append(self._expect_ident("nama kolom").value.lower())
             self._expect(T.RPAREN, "')' penutup daftar kolom")
+        
         if self._match_kw("VALUES"):
             rows = [self._value_row()]
             while self._match(T.COMMA):
                 rows.append(self._value_row())
             return ast.Insert(table, columns, rows, None, line=start.line)
+        
+        """
         if self._check_kw("SELECT"):
             # TODO(T1): dukung INSERT INTO ... SELECT ... (SPESIFIKASI.md bagian 3 dan 5).
-            raise ParseError("INSERT ... SELECT belum didukung", self._peek())
+        """
+        
+        if self._check_kw("SELECT"):
+            query = self._select()
+            return ast.Insert(table, columns, [], query, line=start.line)
+        
         raise ParseError("diharapkan VALUES atau SELECT", self._peek())
 
     def _value_row(self) -> list:
