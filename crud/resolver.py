@@ -85,15 +85,13 @@ class Resolver:
             self._declare(source.alias, None, source.line)
 
     def _lookup(self, name: str) -> ScopeEntry | None:
-        """Cari nama di rantai scope."""
-        chain = []
+        """Cari nama dari scope TERDALAM ke luar (SPEK 4.3, Bab 11 resolveLocal).
+        Yang pertama ketemu menang -> shadowing; alias luar tetap ketemu -> correlated subquery."""
         scope = self.scope
         while scope is not None:
-            chain.append(scope)
-            scope = scope.parent
-        for scope in reversed(chain):
             if name in scope.entries:
                 return scope.entries[name]
+            scope = scope.parent
         return None
 
     # ---- statement ------------------------------------------------------
@@ -139,6 +137,7 @@ class Resolver:
         self._push()
         self._declare_source(dele.table)
         self._expr(dele.where)
+        self._pop()     # setiap _push wajib punya _pop (SPEK 4.5)
 
     # ---- ekspresi -------------------------------------------------------
     def _expr(self, expr) -> None:
@@ -185,19 +184,12 @@ class Resolver:
             - tidak ada tabel                    -> warning
         """
         
-        # Unqualified column handling (SPESIFIKASI.md 4.3)
-        available_tables = []
-        scope = self.scope
-        while scope is not None:
-            for entry in scope.entries.values():
-                if entry.table is not None:
-                    available_tables.append(entry.table)
-            scope = scope.parent
-            
-        if len(available_tables) == 1:
-            col.resolved = available_tables[0]
-        elif len(available_tables) > 1:
+        # Kolom tanpa qualifier: HANYA scope terdalam (SPEK 4.3), tidak naik ke induk.
+        # Subquery di FROM ikut dihitung (di-resolve ke "<subquery alias>").
+        entries = list(self.scope.entries.values()) if self.scope is not None else []
+        if len(entries) == 1:
+            col.resolved = _target_of(entries[0])
+        elif len(entries) > 1:
             self._warning(f"kolom '{col.name}' ambigu tanpa skema", col.line)
         else:
             self._warning(f"kolom '{col.name}' tidak dapat diresolusi", col.line)
-        pass

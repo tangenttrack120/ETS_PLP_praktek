@@ -127,7 +127,13 @@ class Lexer:
             self._add(TokenType.OP, ch, line, col)
             return
         if ch == "<":
-            op = "<=" if self._match("=") else "<"
+            # Maximal munch: '<>' dan '<=' satu token (SPEK 2.5)
+            if self._match("="):
+                op = "<="
+            elif self._match(">"):
+                op = "<>"
+            else:
+                op = "<"
             self._add(TokenType.OP, op, line, col)
             return
         if ch == ">":
@@ -168,6 +174,11 @@ class Lexer:
                 raise LexError("string tidak ditutup", line, col)
             ch = self._advance()
             if ch == "'":
+                # '' di dalam string = satu karakter kutip (SPEK 2.4)
+                if self._peek() == "'":
+                    self._advance()
+                    chars.append("'")
+                    continue    
                 break
             chars.append(ch)
         self._add(TokenType.STRING, "".join(chars), line, col)
@@ -187,8 +198,9 @@ class Lexer:
         while self._peek().isalnum() or self._peek() == "_":
             self._advance()
         text = self.src[start:self.pos]
-        if text in KEYWORDS:
-            self._add(TokenType.KEYWORD, text, line, col)
+        # Keyword tidak peka huruf besar/kecil, dinormalisasi ke huruf besar (SPEK 2.2)
+        if text.upper() in KEYWORDS:
+            self._add(TokenType.KEYWORD, text.upper(), line, col)
         else:
             self._add(TokenType.IDENT, text, line, col)
 
