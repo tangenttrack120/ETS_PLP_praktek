@@ -112,13 +112,14 @@ class Lexer:
                 TODO(T3): dukung komentar blok /* ... */ (SPESIFIKASI.md bagian 2.3).
             """
             self._advance()  # consume '*'
+            start_line, start_col = line, col
             while not self._at_end():
                 if self._peek() == "*" and self._peek(1) == "/":
                     self._advance()  # consume '*'
                     self._advance()  # consume '/'
                     return
                 self._advance()
-            raise LexError("komentar blok tidak ditutup", line, col)
+            raise LexError("komentar blok tidak ditutup", start_line, start_col)
         if ch in _SINGLE:
             self._add(_SINGLE[ch], ch, line, col)
             return
