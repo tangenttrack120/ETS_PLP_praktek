@@ -51,7 +51,7 @@ sendiri dan memakai konsep dari _Crafting Interpreters_ (sebutkan bab). Bagian i
 
 ## Bug 3: (kegagalan pada test_kolom_tanpa_qualifier_satu_tabel() di test_resolver.py)
 
-**Ditemukan oleh:** (Richard) · **Diperbaiki oleh:** (nama)
+**Ditemukan oleh:** (Richard) · **Diperbaiki oleh:** (Richard)
 
 **Gejala.** test_kolom_tanpa_qualifier_satu_tabel() di test_resolver.py gagal.
 
@@ -74,7 +74,111 @@ memverifikasinya?
 
 ---
 
-## Bug 4: (bug)
+## Bug 4: (lexer.py \_string() Escaped Quotes)
+
+**Ditemukan oleh:** (Richard) · **Diperbaiki oleh:** (nama)
+
+**Gejala.** Input, output yang didapat, dan output yang diharapkan menurut SPESIFIKASI.md
+(bagian 2.4).
+
+**Reproduksi minimal.** SQL terpendek yang memicu bug:
+
+```sql
+
+```
+
+**Akar masalah.** Mengapa kode lama salah? Konsep apa yang dilanggar?
+
+**Perbaikan.** File dan fungsi yang diubah, serta alasannya. Sebutkan juga perbaikan
+alternatif yang kalian pertimbangkan dan alasan tidak memilihnya.
+
+**Test regresi.** Nama test di `tests/test_tambahan.py` yang gagal sebelum perbaikan dan lulus
+sesudahnya.
+
+**Peran AI.** Apakah AI membantu menemukan atau memperbaiki bug ini? Bagaimana kalian
+memverifikasinya?
+
+---
+
+## Bug 5: (lexer.py \_scan_token() Not-Equal Operator <>)
+
+**Ditemukan oleh:** (Richard) · **Diperbaiki oleh:** (nama)
+
+**Gejala.** Input, output yang didapat, dan output yang diharapkan menurut SPESIFIKASI.md
+(bagian 2.5).
+
+**Reproduksi minimal.** SQL terpendek yang memicu bug:
+
+```sql
+
+```
+
+**Akar masalah.** Mengapa kode lama salah? Konsep apa yang dilanggar?
+
+**Perbaikan.** File dan fungsi yang diubah, serta alasannya. Sebutkan juga perbaikan
+alternatif yang kalian pertimbangkan dan alasan tidak memilihnya.
+
+**Test regresi.** Nama test di `tests/test_tambahan.py` yang gagal sebelum perbaikan dan lulus
+sesudahnya.
+
+**Peran AI.** Apakah AI membantu menemukan atau memperbaiki bug ini? Bagaimana kalian
+memverifikasinya?
+
+---
+
+## Bug 6: (parser.py \_join() Optional OUTER Keyword in JOIN)
+
+**Ditemukan oleh:** (Richard) · **Diperbaiki oleh:** (nama)
+
+**Gejala.** Input, output yang didapat, dan output yang diharapkan menurut SPESIFIKASI.md
+(bagian 3).
+
+**Reproduksi minimal.** SQL terpendek yang memicu bug:
+
+```sql
+
+```
+
+**Akar masalah.** Mengapa kode lama salah? Konsep apa yang dilanggar?
+
+**Perbaikan.** File dan fungsi yang diubah, serta alasannya. Sebutkan juga perbaikan
+alternatif yang kalian pertimbangkan dan alasan tidak memilihnya.
+
+**Test regresi.** Nama test di `tests/test_tambahan.py` yang gagal sebelum perbaikan dan lulus
+sesudahnya.
+
+**Peran AI.** Apakah AI membantu menemukan atau memperbaiki bug ini? Bagaimana kalian
+memverifikasinya?
+
+---
+
+## Bug 7: (parser.py \_synchronize() Panic-Mode Error Recovery)
+
+**Ditemukan oleh:** (Richard) · **Diperbaiki oleh:** (nama)
+
+**Gejala.** Input, output yang didapat, dan output yang diharapkan menurut SPESIFIKASI.md
+(bagian 6).
+
+**Reproduksi minimal.** SQL terpendek yang memicu bug:
+
+```sql
+
+```
+
+**Akar masalah.** Mengapa kode lama salah? Konsep apa yang dilanggar?
+
+**Perbaikan.** File dan fungsi yang diubah, serta alasannya. Sebutkan juga perbaikan
+alternatif yang kalian pertimbangkan dan alasan tidak memilihnya.
+
+**Test regresi.** Nama test di `tests/test_tambahan.py` yang gagal sebelum perbaikan dan lulus
+sesudahnya.
+
+**Peran AI.** Apakah AI membantu menemukan atau memperbaiki bug ini? Bagaimana kalian
+memverifikasinya?
+
+---
+
+## Bug 8: (bug)
 
 **Ditemukan oleh:** (nama) · **Diperbaiki oleh:** (nama)
 
